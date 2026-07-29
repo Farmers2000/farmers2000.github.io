@@ -1,307 +1,450 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Soccer Tactics Board</title>
-<script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
-<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
-<script src="https://unpkg.com/@babel/standalone@7.24.7/babel.min.js"></script>
-<script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body>
-<div id="root"></div>
-
-<script type="text/babel" data-presets="react">
-const { useState, useRef, useEffect } = React;
-
-/* ---- Simple inline icon components (stand-ins for lucide-react) ---- */
-function MousePointer2({ size = 18 }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M4 4l7 17 2.3-7.3L20 11.5z" />
-    </svg>
-  );
-}
-function Pen({ size = 18 }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M17 3l4 4L7 21H3v-4z" />
-    </svg>
-  );
-}
-function RotateCcw({ size = 18 }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3 12a9 9 0 1 0 3-6.7L3 8" />
-      <path d="M3 3v5h5" />
-    </svg>
-  );
-}
-function Undo({ size = 18 }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M9 14 4 9l5-5" />
-      <path d="M4 9h10a6 6 0 0 1 0 12h-3" />
-    </svg>
-  );
-}
-function Trash2({ size = 18 }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3 6h18" />
-      <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-      <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-      <path d="M10 11v6M14 11v6" />
-    </svg>
-  );
-}
-
-const INITIAL_PLAYERS = [
-  { id: 'A1', type: 'player', team: 'A', number: '1', x: 90, y: 325, color: '#ef4444' },
-  { id: 'A2', type: 'player', team: 'A', number: '2', x: 200, y: 100, color: '#ef4444' },
-  { id: 'A3', type: 'player', team: 'A', number: '3', x: 170, y: 250, color: '#ef4444' },
-  { id: 'A4', type: 'player', team: 'A', number: '4', x: 170, y: 400, color: '#ef4444' },
-  { id: 'A5', type: 'player', team: 'A', number: '5', x: 200, y: 550, color: '#ef4444' },
-  { id: 'A6', type: 'player', team: 'A', number: '6', x: 320, y: 200, color: '#ef4444' },
-  { id: 'A7', type: 'player', team: 'A', number: '8', x: 280, y: 325, color: '#ef4444' },
-  { id: 'A8', type: 'player', team: 'A', number: '10', x: 320, y: 450, color: '#ef4444' },
-  { id: 'A9', type: 'player', team: 'A', number: '11', x: 420, y: 120, color: '#ef4444' },
-  { id: 'A10', type: 'player', team: 'A', number: '9', x: 450, y: 325, color: '#ef4444' },
-  { id: 'A11', type: 'player', team: 'A', number: '7', x: 420, y: 530, color: '#ef4444' },
-  { id: 'B1', type: 'player', team: 'B', number: '1', x: 910, y: 325, color: '#3b82f6' },
-  { id: 'B2', type: 'player', team: 'B', number: '2', x: 800, y: 550, color: '#3b82f6' },
-  { id: 'B3', type: 'player', team: 'B', number: '3', x: 830, y: 400, color: '#3b82f6' },
-  { id: 'B4', type: 'player', team: 'B', number: '4', x: 830, y: 250, color: '#3b82f6' },
-  { id: 'B5', type: 'player', team: 'B', number: '5', x: 800, y: 100, color: '#3b82f6' },
-  { id: 'B6', type: 'player', team: 'B', number: '11', x: 650, y: 550, color: '#3b82f6' },
-  { id: 'B7', type: 'player', team: 'B', number: '8', x: 680, y: 400, color: '#3b82f6' },
-  { id: 'B8', type: 'player', team: 'B', number: '6', x: 680, y: 250, color: '#3b82f6' },
-  { id: 'B9', type: 'player', team: 'B', number: '7', x: 650, y: 100, color: '#3b82f6' },
-  { id: 'B10', type: 'player', team: 'B', number: '9', x: 550, y: 400, color: '#3b82f6' },
-  { id: 'B11', type: 'player', team: 'B', number: '10', x: 550, y: 250, color: '#3b82f6' },
-  { id: 'ball', type: 'ball', x: 500, y: 325 }
-];
-
-const DRAW_COLORS = [
-  { id: 'yellow', value: '#eab308' },
-  { id: 'white', value: '#ffffff' },
-  { id: 'red', value: '#ef4444' },
-  { id: 'blue', value: '#3b82f6' },
-  { id: 'black', value: '#000000' }
-];
-
-function App() {
-  const [mode, setMode] = useState('move');
-  const [drawColor, setDrawColor] = useState('#eab308');
-  const [elements, setElements] = useState(INITIAL_PLAYERS);
-  const [paths, setPaths] = useState([]);
-  const [draggingItem, setDraggingItem] = useState(null);
-  const [currentPath, setCurrentPath] = useState(null);
-  const boardRef = useRef(null);
-
-  const getRelativeCoords = (e) => {
-    const svg = boardRef.current;
-    if (!svg) return { x: 0, y: 0 };
-    const pt = svg.createSVGPoint();
-    pt.x = e.clientX;
-    pt.y = e.clientY;
-    const svgP = pt.matrixTransform(svg.getScreenCTM().inverse());
-    return { x: svgP.x, y: svgP.y };
-  };
-
-  const handlePointerDown = (e) => {
-    if (mode === 'draw') {
-      const coords = getRelativeCoords(e);
-      setCurrentPath({ id: `path-${Date.now()}`, color: drawColor, points: [coords] });
-    }
-  };
-
-  const handlePointerMove = (e) => {
-    if (draggingItem) {
-      const coords = getRelativeCoords(e);
-      setElements(prev => prev.map(el => {
-        if (el.id === draggingItem.id) {
-          let newX = coords.x - draggingItem.offsetX;
-          let newY = coords.y - draggingItem.offsetY;
-          newX = Math.max(20, Math.min(980, newX));
-          newY = Math.max(20, Math.min(630, newY));
-          return { ...el, x: newX, y: newY };
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Soccer Tactician Board</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Small utility to ensure SVG scales from its center on hover */
+        .svg-center-origin {
+            transform-origin: 0px 0px;
         }
-        return el;
-      }));
-    } else if (mode === 'draw' && currentPath) {
-      const coords = getRelativeCoords(e);
-      setCurrentPath(prev => ({ ...prev, points: [...prev.points, coords] }));
-    }
-  };
+        /* Disable touch actions on the board to prevent scrolling while drawing/dragging on mobile */
+        #board {
+            touch-action: none;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-slate-900 text-slate-200 flex flex-col font-sans select-none">
 
-  const handlePointerUp = () => {
-    if (draggingItem) setDraggingItem(null);
-    if (mode === 'draw' && currentPath) {
-      if (currentPath.points.length > 1) setPaths(prev => [...prev, currentPath]);
-      setCurrentPath(null);
-    }
-  };
-
-  const handleElementPointerDown = (e, id) => {
-    if (mode === 'move') {
-      e.stopPropagation();
-      const el = elements.find(item => item.id === id);
-      const coords = getRelativeCoords(e);
-      setDraggingItem({ id, offsetX: coords.x - el.x, offsetY: coords.y - el.y });
-      e.target.setPointerCapture(e.pointerId);
-    }
-  };
-
-  const handleElementPointerUp = (e) => {
-    if (draggingItem) {
-      e.target.releasePointerCapture(e.pointerId);
-      setDraggingItem(null);
-    }
-  };
-
-  const resetPositions = () => setElements(INITIAL_PLAYERS);
-  const clearDrawings = () => { setPaths([]); setCurrentPath(null); };
-  const undoDrawing = () => setPaths(prev => prev.slice(0, -1));
-
-  const renderPath = (path, isDraft = false) => {
-    if (!path || path.points.length < 2) return null;
-    const d = `M ${path.points.map(p => `${p.x},${p.y}`).join(' L ')}`;
-    return (
-      <path
-        key={path.id || 'draft'}
-        d={d}
-        stroke={path.color}
-        fill="none"
-        strokeWidth="4"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        markerEnd={`url(#arrowhead-${path.color.replace('#', '')})`}
-        className={isDraft ? "opacity-70" : ""}
-      />
-    );
-  };
-
-  return (
-    <div className="min-h-screen bg-slate-900 text-slate-200 flex flex-col font-sans select-none touch-none">
-      <div className="bg-slate-800 border-b border-slate-700 p-4 shadow-md flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-2">
-          <div className="font-bold text-xl text-white mr-4 flex items-center gap-2">
-            <span className="w-4 h-4 rounded-full bg-green-500 block"></span>
-            TacticBoard
-          </div>
-          <div className="flex bg-slate-900 rounded-lg p-1">
-            <button onClick={() => setMode('move')} className={`flex items-center gap-2 px-4 py-2 rounded-md transition-colors ${mode === 'move' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'}`}>
-              <MousePointer2 size={18} /> Move
-            </button>
-            <button onClick={() => setMode('draw')} className={`flex items-center gap-2 px-4 py-2 rounded-md transition-colors ${mode === 'draw' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'}`}>
-              <Pen size={18} /> Draw
-            </button>
-          </div>
-          {mode === 'draw' && (
-            <div className="flex gap-2 ml-4 bg-slate-900 p-1.5 rounded-lg">
-              {DRAW_COLORS.map(c => (
-                <button key={c.id} onClick={() => setDrawColor(c.value)} className={`w-8 h-8 rounded-full border-2 transition-transform ${drawColor === c.value ? 'border-white scale-110' : 'border-transparent'}`} style={{ backgroundColor: c.value }} title={c.id} />
-              ))}
+    <!-- Top Toolbar -->
+    <div class="bg-slate-800 border-b border-slate-700 p-4 shadow-md flex flex-wrap items-center justify-between gap-4">
+        <div class="flex items-center gap-2">
+            <div class="font-bold text-xl text-white mr-4 flex items-center gap-2">
+                <span class="w-4 h-4 rounded-full bg-green-500 block"></span>
+                TacticBoard
             </div>
-          )}
-        </div>
-        <div className="flex items-center gap-2">
-          <button onClick={undoDrawing} disabled={paths.length === 0} className="p-2 rounded-lg bg-slate-700 text-slate-300 hover:bg-slate-600 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors" title="Undo Line">
-            <Undo size={18} />
-          </button>
-          <button onClick={clearDrawings} className="p-2 rounded-lg bg-slate-700 text-slate-300 hover:bg-red-500 hover:text-white transition-colors" title="Clear All Lines">
-            <Trash2 size={18} />
-          </button>
-          <div className="w-px h-8 bg-slate-600 mx-2"></div>
-          <button onClick={resetPositions} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-700 text-slate-300 hover:bg-slate-600 hover:text-white transition-colors">
-            <RotateCcw size={18} /> Reset Players
-          </button>
-        </div>
-      </div>
+            
+            <div class="flex bg-slate-900 rounded-lg p-1">
+                <button id="btn-move" class="flex items-center gap-2 px-4 py-2 rounded-md transition-colors bg-blue-600 text-white">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.037 4.688a.495.495 0 0 1 .651-.651l16 6.5a.5.5 0 0 1-.063.947l-6.124 1.58a2 2 0 0 0-1.438 1.437l-1.579 6.126a.5.5 0 0 1-.947.063z"/></svg>
+                    Move
+                </button>
+                <button id="btn-draw" class="flex items-center gap-2 px-4 py-2 rounded-md transition-colors text-slate-400 hover:text-white">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+                    Draw
+                </button>
+            </div>
 
-      <div className="flex-1 flex items-center justify-center p-4 lg:p-8 overflow-hidden bg-slate-950">
-        <div className="relative w-full max-w-6xl aspect-[1000/650] rounded-lg shadow-2xl overflow-hidden ring-4 ring-slate-800">
-          <svg
-            ref={boardRef}
-            viewBox="0 0 1000 650"
-            className="w-full h-full cursor-crosshair touch-none"
-            style={{ cursor: mode === 'draw' ? 'crosshair' : 'default' }}
-            onPointerDown={handlePointerDown}
-            onPointerMove={handlePointerMove}
-            onPointerUp={handlePointerUp}
-            onPointerLeave={handlePointerUp}
-          >
-            <defs>
-              <pattern id="grass" width="100" height="650" patternUnits="userSpaceOnUse">
-                <rect width="50" height="650" fill="#22c55e" />
-                <rect x="50" width="50" height="650" fill="#16a34a" />
-              </pattern>
-              {DRAW_COLORS.map(c => (
-                <marker key={c.id} id={`arrowhead-${c.value.replace('#', '')}`} markerWidth="6" markerHeight="5" refX="5" refY="2.5" orient="auto">
-                  <polygon points="0 0, 6 2.5, 0 5" fill={c.value} />
-                </marker>
-              ))}
-            </defs>
-            <rect width="1000" height="650" fill="url(#grass)" />
-            <g stroke="#ffffff" strokeWidth="3" fill="none" opacity="0.8">
-              <rect x="50" y="50" width="900" height="550" />
-              <line x1="500" y1="50" x2="500" y2="600" />
-              <circle cx="500" cy="325" r="75" />
-              <circle cx="500" cy="325" r="4" fill="#ffffff" />
-              <rect x="50" y="165" width="135" height="320" />
-              <rect x="50" y="250" width="45" height="150" />
-              <circle cx="150" cy="325" r="4" fill="#ffffff" />
-              <path d="M 185 260 A 75 75 0 0 1 185 390" />
-              <rect x="815" y="165" width="135" height="320" />
-              <rect x="905" y="250" width="45" height="150" />
-              <circle cx="850" cy="325" r="4" fill="#ffffff" />
-              <path d="M 815 260 A 75 75 0 0 0 815 390" />
-            </g>
-            {paths.map(path => renderPath(path))}
-            {renderPath(currentPath, true)}
-            {elements.map(el => {
-              const isBall = el.type === 'ball';
-              return (
-                <g
-                  key={el.id}
-                  transform={`translate(${el.x}, ${el.y})`}
-                  onPointerDown={(e) => handleElementPointerDown(e, el.id)}
-                  onPointerUp={handleElementPointerUp}
-                  style={{ cursor: mode === 'move' ? 'grab' : 'pointer' }}
-                >
-                  <g className="transition-transform hover:scale-110 active:scale-95">
-                    {isBall ? (
-                      <g>
-                        <circle cx="0" cy="0" r="10" fill="#ffffff" stroke="#000000" strokeWidth="2" />
-                        <path d="M -3 -3 L 3 -3 L 5 2 L 0 6 L -5 2 Z" fill="#000000" opacity="0.8" />
-                      </g>
-                    ) : (
-                      <g>
-                        <circle cx="0" cy="0" r="18" fill={el.color} stroke="#ffffff" strokeWidth="2.5" style={{ filter: 'drop-shadow(0px 4px 4px rgba(0,0,0,0.3))' }} />
-                        <text x="0" y="5" textAnchor="middle" fill="#ffffff" fontSize="14" fontWeight="bold" className="pointer-events-none font-sans">
-                          {el.number}
-                        </text>
-                      </g>
-                    )}
-                  </g>
-                </g>
-              );
-            })}
-          </svg>
+            <!-- Color Picker -->
+            <div id="color-picker" class="hidden gap-2 ml-4 bg-slate-900 p-1.5 rounded-lg">
+                <!-- Buttons injected by JS -->
+            </div>
         </div>
-      </div>
 
-      <div className="bg-slate-900 p-2 text-center text-slate-500 text-sm">
-        {mode === 'move' ? 'Drag players or the ball to position them.' : 'Click and drag on the field to draw tactical lines.'}
-      </div>
+        <div class="flex items-center gap-2">
+            <button id="btn-undo" disabled class="p-2 rounded-lg bg-slate-700 text-slate-300 hover:bg-slate-600 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors" title="Undo Line">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>
+            </button>
+            <button id="btn-clear" class="p-2 rounded-lg bg-slate-700 text-slate-300 hover:bg-red-500 hover:text-white transition-colors" title="Clear All Lines">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+            </button>
+            <div class="w-px h-8 bg-slate-600 mx-2"></div>
+            <button id="btn-reset" class="flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-700 text-slate-300 hover:bg-slate-600 hover:text-white transition-colors">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                Reset Players
+            </button>
+        </div>
     </div>
-  );
-}
 
-const root = ReactDOM.createRoot(document.getElementById('root'));
-root.render(<App />);
-</script>
+    <!-- Main Board Area -->
+    <div class="flex-1 flex items-center justify-center p-4 lg:p-8 overflow-hidden bg-slate-950">
+        <div class="relative w-full max-w-6xl aspect-[1000/650] rounded-lg shadow-2xl overflow-hidden ring-4 ring-slate-800">
+            
+            <svg id="board" viewBox="0 0 1000 650" class="w-full h-full cursor-default">
+                <defs>
+                    <!-- Grass Pattern -->
+                    <pattern id="grass" width="100" height="650" patternUnits="userSpaceOnUse">
+                        <rect width="50" height="650" fill="#22c55e" />
+                        <rect x="50" width="50" height="650" fill="#16a34a" />
+                    </pattern>
+                    
+                    <!-- Arrowheads injected by JS -->
+                    <g id="arrowheads-container"></g>
+                </defs>
+
+                <!-- Pitch Background -->
+                <rect width="1000" height="650" fill="url(#grass)" />
+                
+                <!-- Pitch Markings -->
+                <g stroke="#ffffff" stroke-width="3" fill="none" opacity="0.8">
+                    <!-- Outer Bounds -->
+                    <rect x="50" y="50" width="900" height="550" />
+                    <!-- Halfway Line -->
+                    <line x1="500" y1="50" x2="500" y2="600" />
+                    <!-- Center Circle & Spot -->
+                    <circle cx="500" cy="325" r="75" />
+                    <circle cx="500" cy="325" r="4" fill="#ffffff" />
+                    
+                    <!-- Left Penalty Area -->
+                    <rect x="50" y="165" width="135" height="320" />
+                    <rect x="50" y="250" width="45" height="150" />
+                    <circle cx="150" cy="325" r="4" fill="#ffffff" />
+                    <path d="M 185 260 A 75 75 0 0 1 185 390" />
+                    
+                    <!-- Right Penalty Area -->
+                    <rect x="815" y="165" width="135" height="320" />
+                    <rect x="905" y="250" width="45" height="150" />
+                    <circle cx="850" cy="325" r="4" fill="#ffffff" />
+                    <path d="M 815 260 A 75 75 0 0 0 815 390" />
+                </g>
+
+                <!-- Dynamic Layers -->
+                <g id="paths-layer"></g>
+                <g id="elements-layer"></g>
+            </svg>
+        </div>
+    </div>
+    
+    <!-- Footer Instructions -->
+    <div id="footer-text" class="bg-slate-900 p-2 text-center text-slate-500 text-sm">
+        Drag players or the ball to position them.
+    </div>
+
+    <!-- Application Logic -->
+    <script>
+        const INITIAL_PLAYERS = [
+            { id: 'A1', type: 'player', team: 'A', number: '1', x: 90, y: 325, color: '#ef4444' },
+            { id: 'A2', type: 'player', team: 'A', number: '2', x: 200, y: 100, color: '#ef4444' },
+            { id: 'A3', type: 'player', team: 'A', number: '3', x: 170, y: 250, color: '#ef4444' },
+            { id: 'A4', type: 'player', team: 'A', number: '4', x: 170, y: 400, color: '#ef4444' },
+            { id: 'A5', type: 'player', team: 'A', number: '5', x: 200, y: 550, color: '#ef4444' },
+            { id: 'A6', type: 'player', team: 'A', number: '6', x: 320, y: 200, color: '#ef4444' },
+            { id: 'A7', type: 'player', team: 'A', number: '8', x: 280, y: 325, color: '#ef4444' },
+            { id: 'A8', type: 'player', team: 'A', number: '10', x: 320, y: 450, color: '#ef4444' },
+            { id: 'A9', type: 'player', team: 'A', number: '11', x: 420, y: 120, color: '#ef4444' },
+            { id: 'A10', type: 'player', team: 'A', number: '9', x: 450, y: 325, color: '#ef4444' },
+            { id: 'A11', type: 'player', team: 'A', number: '7', x: 420, y: 530, color: '#ef4444' },
+            { id: 'B1', type: 'player', team: 'B', number: '1', x: 910, y: 325, color: '#3b82f6' },
+            { id: 'B2', type: 'player', team: 'B', number: '2', x: 800, y: 550, color: '#3b82f6' },
+            { id: 'B3', type: 'player', team: 'B', number: '3', x: 830, y: 400, color: '#3b82f6' },
+            { id: 'B4', type: 'player', team: 'B', number: '4', x: 830, y: 250, color: '#3b82f6' },
+            { id: 'B5', type: 'player', team: 'B', number: '5', x: 800, y: 100, color: '#3b82f6' },
+            { id: 'B6', type: 'player', team: 'B', number: '11', x: 650, y: 550, color: '#3b82f6' },
+            { id: 'B7', type: 'player', team: 'B', number: '8', x: 680, y: 400, color: '#3b82f6' },
+            { id: 'B8', type: 'player', team: 'B', number: '6', x: 680, y: 250, color: '#3b82f6' },
+            { id: 'B9', type: 'player', team: 'B', number: '7', x: 650, y: 100, color: '#3b82f6' },
+            { id: 'B10', type: 'player', team: 'B', number: '9', x: 550, y: 400, color: '#3b82f6' },
+            { id: 'B11', type: 'player', team: 'B', number: '10', x: 550, y: 250, color: '#3b82f6' },
+            { id: 'ball', type: 'ball', x: 500, y: 325 }
+        ];
+
+        const DRAW_COLORS = [
+            { id: 'yellow', value: '#eab308' },
+            { id: 'white', value: '#ffffff' },
+            { id: 'red', value: '#ef4444' },
+            { id: 'blue', value: '#3b82f6' },
+            { id: 'black', value: '#000000' }
+        ];
+
+        // State
+        let state = {
+            mode: 'move', // 'move' | 'draw'
+            color: '#eab308',
+            elements: JSON.parse(JSON.stringify(INITIAL_PLAYERS)),
+            paths: [],
+            draggingItem: null,
+            currentPath: null,
+            currentPathEl: null
+        };
+
+        // DOM Elements
+        const board = document.getElementById('board');
+        const elementsLayer = document.getElementById('elements-layer');
+        const pathsLayer = document.getElementById('paths-layer');
+        const arrowheadsContainer = document.getElementById('arrowheads-container');
+        
+        // --- Initialization ---
+
+        function init() {
+            // Setup arrowheads
+            DRAW_COLORS.forEach(c => {
+                const marker = document.createElementNS("http://www.w3.org/2000/svg", "marker");
+                marker.setAttribute('id', `arrowhead-${c.value.replace('#', '')}`);
+                marker.setAttribute('markerWidth', '6');
+                marker.setAttribute('markerHeight', '5');
+                marker.setAttribute('refX', '5');
+                marker.setAttribute('refY', '2.5');
+                marker.setAttribute('orient', 'auto');
+                
+                const polygon = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+                polygon.setAttribute('points', '0 0, 6 2.5, 0 5');
+                polygon.setAttribute('fill', c.value);
+                
+                marker.appendChild(polygon);
+                arrowheadsContainer.appendChild(marker);
+            });
+
+            // Setup color picker
+            const colorPicker = document.getElementById('color-picker');
+            DRAW_COLORS.forEach(c => {
+                const btn = document.createElement('button');
+                btn.title = c.id;
+                btn.style.backgroundColor = c.value;
+                btn.onclick = () => {
+                    state.color = c.value;
+                    updateColorUI();
+                };
+                colorPicker.appendChild(btn);
+            });
+
+            renderElements();
+            updateModeUI();
+            updateColorUI();
+            updateUndoUI();
+        }
+
+        function renderElements() {
+            elementsLayer.innerHTML = '';
+            
+            state.elements.forEach(el => {
+                // Outer group handles absolute positioning (translation)
+                const outerG = document.createElementNS("http://www.w3.org/2000/svg", "g");
+                outerG.setAttribute('transform', `translate(${el.x}, ${el.y})`);
+                outerG.style.cursor = state.mode === 'move' ? 'grab' : 'pointer';
+                
+                // Pointer Down on Element
+                outerG.addEventListener('pointerdown', (e) => {
+                    if (state.mode === 'move') {
+                        e.stopPropagation(); // Prevent board drawing
+                        const coords = getRelativeCoords(e);
+                        state.draggingItem = {
+                            id: el.id,
+                            domEl: outerG, // Cache element for performance
+                            offsetX: coords.x - el.x,
+                            offsetY: coords.y - el.y
+                        };
+                        outerG.setPointerCapture(e.pointerId);
+                    }
+                });
+
+                outerG.addEventListener('pointerup', (e) => {
+                    if (state.draggingItem && state.draggingItem.id === el.id) {
+                        outerG.releasePointerCapture(e.pointerId);
+                        state.draggingItem = null;
+                    }
+                });
+
+                // Inner group handles hover effects (scaling) safely
+                const innerG = document.createElementNS("http://www.w3.org/2000/svg", "g");
+                innerG.setAttribute('class', 'transition-transform hover:scale-110 active:scale-95 svg-center-origin');
+
+                if (el.type === 'ball') {
+                    innerG.innerHTML = `
+                        <circle cx="0" cy="0" r="10" fill="#ffffff" stroke="#000000" stroke-width="2" style="filter: drop-shadow(0px 4px 4px rgba(0,0,0,0.3));" />
+                        <path d="M -3 -3 L 3 -3 L 5 2 L 0 6 L -5 2 Z" fill="#000000" opacity="0.8" />
+                    `;
+                } else {
+                    innerG.innerHTML = `
+                        <circle cx="0" cy="0" r="18" fill="${el.color}" stroke="#ffffff" stroke-width="2.5" style="filter: drop-shadow(0px 4px 4px rgba(0,0,0,0.3));" />
+                        <text x="0" y="5" text-anchor="middle" fill="#ffffff" font-size="14" font-weight="bold" class="pointer-events-none font-sans">${el.number}</text>
+                    `;
+                }
+
+                outerG.appendChild(innerG);
+                elementsLayer.appendChild(outerG);
+            });
+        }
+
+        // --- Helper Methods ---
+
+        function getRelativeCoords(e) {
+            const pt = board.createSVGPoint();
+            pt.x = e.clientX;
+            pt.y = e.clientY;
+            const svgP = pt.matrixTransform(board.getScreenCTM().inverse());
+            return { x: svgP.x, y: svgP.y };
+        }
+
+        function buildPathData(points) {
+            return `M ${points.map(p => `${p.x},${p.y}`).join(' L ')}`;
+        }
+
+        // --- UI Updaters ---
+
+        function updateModeUI() {
+            const moveBtn = document.getElementById('btn-move');
+            const drawBtn = document.getElementById('btn-draw');
+            const colorPicker = document.getElementById('color-picker');
+
+            if (state.mode === 'move') {
+                moveBtn.className = 'flex items-center gap-2 px-4 py-2 rounded-md transition-colors bg-blue-600 text-white';
+                drawBtn.className = 'flex items-center gap-2 px-4 py-2 rounded-md transition-colors text-slate-400 hover:text-white';
+                colorPicker.classList.add('hidden');
+                colorPicker.classList.remove('flex');
+                board.style.cursor = 'default';
+            } else {
+                moveBtn.className = 'flex items-center gap-2 px-4 py-2 rounded-md transition-colors text-slate-400 hover:text-white';
+                drawBtn.className = 'flex items-center gap-2 px-4 py-2 rounded-md transition-colors bg-blue-600 text-white';
+                colorPicker.classList.remove('hidden');
+                colorPicker.classList.add('flex');
+                board.style.cursor = 'crosshair';
+            }
+
+            Array.from(elementsLayer.children).forEach(g => {
+                g.style.cursor = state.mode === 'move' ? 'grab' : 'pointer';
+            });
+
+            document.getElementById('footer-text').innerText = state.mode === 'move' 
+                ? 'Drag players or the ball to position them.' 
+                : 'Click and drag on the field to draw tactical lines.';
+        }
+
+        function updateColorUI() {
+            const colorPicker = document.getElementById('color-picker');
+            Array.from(colorPicker.children).forEach((btn, i) => {
+                const val = DRAW_COLORS[i].value;
+                btn.className = `w-8 h-8 rounded-full border-2 transition-transform ${state.color === val ? 'border-white scale-110' : 'border-transparent'}`;
+            });
+        }
+
+        function updateUndoUI() {
+            const btn = document.getElementById('btn-undo');
+            if (state.paths.length === 0) {
+                btn.disabled = true;
+                btn.classList.add('opacity-50', 'cursor-not-allowed');
+            } else {
+                btn.disabled = false;
+                btn.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+        }
+
+        // --- Interaction Listeners (Board) ---
+
+        board.addEventListener('pointerdown', (e) => {
+            if (state.mode === 'draw') {
+                const coords = getRelativeCoords(e);
+                state.currentPath = { points: [coords], color: state.color };
+                
+                const pathEl = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                pathEl.setAttribute('stroke', state.color);
+                pathEl.setAttribute('fill', 'none');
+                pathEl.setAttribute('stroke-width', '4');
+                pathEl.setAttribute('stroke-linecap', 'round');
+                pathEl.setAttribute('stroke-linejoin', 'round');
+                pathEl.setAttribute('marker-end', `url(#arrowhead-${state.color.replace('#', '')})`);
+                pathEl.setAttribute('class', 'opacity-70'); // Draft state
+                pathEl.setAttribute('d', buildPathData(state.currentPath.points));
+                
+                state.currentPathEl = pathEl;
+                pathsLayer.appendChild(pathEl);
+            }
+        });
+
+        board.addEventListener('pointermove', (e) => {
+            if (state.draggingItem) {
+                const coords = getRelativeCoords(e);
+                
+                let newX = coords.x - state.draggingItem.offsetX;
+                let newY = coords.y - state.draggingItem.offsetY;
+                
+                // Constrain coordinates to SVG boundaries (with 20px padding)
+                newX = Math.max(20, Math.min(980, newX));
+                newY = Math.max(20, Math.min(630, newY));
+
+                // Update DOM directly for smooth performance
+                state.draggingItem.domEl.setAttribute('transform', `translate(${newX}, ${newY})`);
+                
+                // Keep state in sync
+                const elState = state.elements.find(el => el.id === state.draggingItem.id);
+                if(elState) {
+                    elState.x = newX;
+                    elState.y = newY;
+                }
+
+            } else if (state.mode === 'draw' && state.currentPath) {
+                const coords = getRelativeCoords(e);
+                const lastPoint = state.currentPath.points[state.currentPath.points.length - 1];
+                
+                // Calculate distance to prevent micro-jitters from messing up the arrowhead
+                const dx = coords.x - lastPoint.x;
+                const dy = coords.y - lastPoint.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                // Only add a new point if the mouse moved a minimum distance (e.g., 5px)
+                if (distance > 5) {
+                    state.currentPath.points.push(coords);
+                    state.currentPathEl.setAttribute('d', buildPathData(state.currentPath.points));
+                }
+            }
+        });
+
+        board.addEventListener('pointerup', (e) => {
+            if (state.mode === 'draw' && state.currentPath) {
+                if (state.currentPath.points.length > 1) {
+                    state.currentPathEl.removeAttribute('class'); // Remove draft opacity
+                    state.paths.push({ el: state.currentPathEl });
+                } else {
+                    // Remove if it was just a click (no line drawn)
+                    state.currentPathEl.remove();
+                }
+                state.currentPath = null;
+                state.currentPathEl = null;
+                updateUndoUI();
+            }
+            if (state.draggingItem) {
+                // Failsafe release if pointerup didn't hit the element directly
+                state.draggingItem.domEl.releasePointerCapture(e.pointerId);
+                state.draggingItem = null;
+            }
+        });
+        
+        // Failsafe for board exit
+        board.addEventListener('pointerleave', (e) => {
+             if (state.mode === 'draw' && state.currentPath) {
+                state.currentPathEl.removeAttribute('class');
+                state.paths.push({ el: state.currentPathEl });
+                state.currentPath = null;
+                state.currentPathEl = null;
+                updateUndoUI();
+             }
+        });
+
+        // --- Action Buttons Listeners ---
+
+        document.getElementById('btn-move').addEventListener('click', () => {
+            state.mode = 'move';
+            updateModeUI();
+        });
+
+        document.getElementById('btn-draw').addEventListener('click', () => {
+            state.mode = 'draw';
+            updateModeUI();
+        });
+
+        document.getElementById('btn-undo').addEventListener('click', () => {
+            if (state.paths.length > 0) {
+                const pathObj = state.paths.pop();
+                pathObj.el.remove();
+                updateUndoUI();
+            }
+        });
+
+        document.getElementById('btn-clear').addEventListener('click', () => {
+            state.paths.forEach(p => p.el.remove());
+            state.paths = [];
+            updateUndoUI();
+        });
+
+        document.getElementById('btn-reset').addEventListener('click', () => {
+            state.elements = JSON.parse(JSON.stringify(INITIAL_PLAYERS));
+            renderElements();
+        });
+
+        // Run
+        init();
+
+    </script>
 </body>
 </html>
